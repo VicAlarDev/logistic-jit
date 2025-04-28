@@ -9,18 +9,21 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
-import { UserAvatarProfile } from '@/components/user-avatar-profile';
-import { SignOutButton, useUser } from '@clerk/nextjs';
+import { useSupabaseAuth } from '@/hooks/use-supabase-auth';
 import { useRouter } from 'next/navigation';
+import { UserCircleIcon } from 'lucide-react';
+
 export function UserNav() {
-  const { user } = useUser();
+  const supabase = useSupabaseAuth();
   const router = useRouter();
+
+  const { user, signOut } = supabase;
   if (user) {
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant='ghost' className='relative h-8 w-8 rounded-full'>
-            <UserAvatarProfile user={user} />
+            <UserCircleIcon />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent
@@ -31,11 +34,8 @@ export function UserNav() {
         >
           <DropdownMenuLabel className='font-normal'>
             <div className='flex flex-col space-y-1'>
-              <p className='text-sm leading-none font-medium'>
-                {user.fullName}
-              </p>
               <p className='text-muted-foreground text-xs leading-none'>
-                {user.emailAddresses[0].emailAddress}
+                {user?.email}
               </p>
             </div>
           </DropdownMenuLabel>
@@ -50,7 +50,7 @@ export function UserNav() {
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuItem>
-            <SignOutButton redirectUrl='/auth/sign-in' />
+            <Button onClick={() => signOut} />
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

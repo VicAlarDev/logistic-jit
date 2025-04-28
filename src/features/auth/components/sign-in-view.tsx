@@ -1,8 +1,7 @@
-import { buttonVariants } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { SignIn as ClerkSignInForm } from '@clerk/nextjs';
-import { GitHubLogoIcon } from '@radix-ui/react-icons';
-import { IconStar } from '@tabler/icons-react';
+import { signInAction } from '@/app/actions';
+import { SubmitButton } from '@/components/submit-button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Metadata } from 'next';
 import Link from 'next/link';
 
@@ -11,18 +10,9 @@ export const metadata: Metadata = {
   description: 'Authentication forms built using the components.'
 };
 
-export default function SignInViewPage({ stars }: { stars: number }) {
+export default async function SignInViewPage() {
   return (
     <div className='relative h-screen flex-col items-center justify-center md:grid lg:max-w-none lg:grid-cols-2 lg:px-0'>
-      <Link
-        href='/examples/authentication'
-        className={cn(
-          buttonVariants({ variant: 'ghost' }),
-          'absolute top-4 right-4 hidden md:top-8 md:right-8'
-        )}
-      >
-        Login
-      </Link>
       <div className='bg-muted relative hidden h-full flex-col p-10 text-white lg:flex dark:border-r'>
         <div className='absolute inset-0 bg-zinc-900' />
         <div className='relative z-20 flex items-center text-lg font-medium'>
@@ -53,47 +43,43 @@ export default function SignInViewPage({ stars }: { stars: number }) {
       </div>
       <div className='flex h-full items-center justify-center p-4 lg:p-8'>
         <div className='flex w-full max-w-md flex-col items-center justify-center space-y-6'>
-          {/* github link  */}
-          <Link
-            className={cn('group inline-flex hover:text-yellow-200')}
-            target='_blank'
-            href={'https://github.com/kiranism/next-shadcn-dashboard-starter'}
-          >
-            <div className='flex items-center'>
-              <GitHubLogoIcon className='size-4' />
-              <span className='ml-1 inline'>Star on GitHub</span>{' '}
-            </div>
-            <div className='ml-2 flex items-center gap-1 text-sm md:flex'>
-              <IconStar
-                className='size-4 text-gray-500 transition-all duration-300 group-hover:text-yellow-300'
-                fill='currentColor'
+          <form className='flex min-w-64 flex-1 flex-col'>
+            <h1 className='text-2xl font-medium'>Sign in</h1>
+            <p className='text-foreground text-sm'>
+              Don&apos;t have an account?{' '}
+              <Link
+                className='text-foreground font-medium underline'
+                href='/auth/sign-up'
+              >
+                Sign up
+              </Link>
+            </p>
+            <div className='mt-8 flex flex-col gap-2 [&>input]:mb-3'>
+              <Label htmlFor='email'>Email</Label>
+              <Input name='email' placeholder='you@example.com' required />
+              <div className='flex items-center justify-between'>
+                <Label htmlFor='password'>Password</Label>
+                <Link
+                  className='text-foreground text-xs underline'
+                  href='/forgot-password'
+                >
+                  Forgot Password?
+                </Link>
+              </div>
+              <Input
+                type='password'
+                name='password'
+                placeholder='Your password'
+                required
               />
-              <span className='font-display font-medium'>{stars}</span>
+              <SubmitButton
+                pendingText='Signing In...'
+                formAction={signInAction}
+              >
+                Iniciar Sesion
+              </SubmitButton>
             </div>
-          </Link>
-          <ClerkSignInForm
-            initialValues={{
-              emailAddress: 'your_mail+clerk_test@example.com'
-            }}
-          />
-
-          <p className='text-muted-foreground px-8 text-center text-sm'>
-            By clicking continue, you agree to our{' '}
-            <Link
-              href='/terms'
-              className='hover:text-primary underline underline-offset-4'
-            >
-              Terms of Service
-            </Link>{' '}
-            and{' '}
-            <Link
-              href='/privacy'
-              className='hover:text-primary underline underline-offset-4'
-            >
-              Privacy Policy
-            </Link>
-            .
-          </p>
+          </form>
         </div>
       </div>
     </div>

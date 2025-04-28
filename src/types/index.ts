@@ -33,3 +33,54 @@ export interface FooterItem {
 export type MainNavItem = NavItemWithOptionalChildren;
 
 export type SidebarNavItem = NavItemWithChildren;
+
+export interface Vehicle {
+  id: string;
+  name: string;
+  brand: string;
+  model: string;
+  color: string;
+  plate: string;
+}
+
+export interface Driver {
+  id: string;
+  cedula: string;
+  first_name: string;
+  last_name: string;
+  vehicle_id?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Factura {
+  id: string;
+  invoice_number: string;
+  client_name: string;
+  load_date: string; // ISO date string
+  delivery_date?: string; // ISO date string
+  state_dest?: string;
+  city_dest?: string;
+  weight_kg?: number;
+  observation?: string;
+  flete_id: string;
+  driver_id?: string | undefined;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Flete {
+  id: string;
+  fo_number: string;
+  driver_id?: string | null;
+  created_at: string;
+  updated_at: string;
+  status: 'En Transito' | 'Despachado' | 'Relacionado' | 'Pagado' | undefined;
+  destination: string;
+  drivers?: {
+    id: string;
+    first_name: string;
+    last_name: string;
+  };
+  facturas?: Factura[];
+}

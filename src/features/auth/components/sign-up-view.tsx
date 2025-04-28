@@ -1,8 +1,9 @@
+import { signUpAction } from '@/app/actions';
+import { SubmitButton } from '@/components/submit-button';
 import { buttonVariants } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { SignUp as ClerkSignUpForm } from '@clerk/nextjs';
-import { GitHubLogoIcon } from '@radix-ui/react-icons';
-import { IconStar } from '@tabler/icons-react';
 import { Metadata } from 'next';
 import Link from 'next/link';
 
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
   description: 'Authentication forms built using the components.'
 };
 
-export default function SignUpViewPage({ stars }: { stars: number }) {
+export default async function SignUpViewPage() {
   return (
     <div className='relative h-screen flex-col items-center justify-center md:grid lg:max-w-none lg:grid-cols-2 lg:px-0'>
       <Link
@@ -53,46 +54,36 @@ export default function SignUpViewPage({ stars }: { stars: number }) {
       </div>
       <div className='flex h-full items-center justify-center p-4 lg:p-8'>
         <div className='flex w-full max-w-md flex-col items-center justify-center space-y-6'>
-          {/* github link  */}
-          <Link
-            className={cn('group inline-flex hover:text-yellow-200')}
-            target='_blank'
-            href={'https://github.com/kiranism/next-shadcn-dashboard-starter'}
-          >
-            <div className='flex items-center'>
-              <GitHubLogoIcon className='size-4' />
-              <span className='ml-1 inline'>Star on GitHub</span>{' '}
-            </div>
-            <div className='ml-2 flex items-center gap-1 text-sm md:flex'>
-              <IconStar
-                className='size-4 text-gray-500 transition-all duration-300 group-hover:text-yellow-300'
-                fill='currentColor'
+          <form className='mx-auto flex max-w-64 min-w-64 flex-col'>
+            <h1 className='text-2xl font-medium'>Sign up</h1>
+            <p className='text text-foreground text-sm'>
+              Already have an account?{' '}
+              <Link
+                className='text-primary font-medium underline'
+                href='/sign-in'
+              >
+                Sign in
+              </Link>
+            </p>
+            <div className='mt-8 flex flex-col gap-2 [&>input]:mb-3'>
+              <Label htmlFor='email'>Email</Label>
+              <Input name='email' placeholder='you@example.com' required />
+              <Label htmlFor='password'>Password</Label>
+              <Input
+                type='password'
+                name='password'
+                placeholder='Your password'
+                minLength={6}
+                required
               />
-              <span className='font-display font-medium'>{stars}</span>
+              <SubmitButton
+                formAction={signUpAction}
+                pendingText='Signing up...'
+              >
+                Sign up
+              </SubmitButton>
             </div>
-          </Link>
-          <ClerkSignUpForm
-            initialValues={{
-              emailAddress: 'your_mail+clerk_test@example.com'
-            }}
-          />
-          <p className='text-muted-foreground px-8 text-center text-sm'>
-            By clicking continue, you agree to our{' '}
-            <Link
-              href='/terms'
-              className='hover:text-primary underline underline-offset-4'
-            >
-              Terms of Service
-            </Link>{' '}
-            and{' '}
-            <Link
-              href='/privacy'
-              className='hover:text-primary underline underline-offset-4'
-            >
-              Privacy Policy
-            </Link>
-            .
-          </p>
+          </form>
         </div>
       </div>
     </div>
