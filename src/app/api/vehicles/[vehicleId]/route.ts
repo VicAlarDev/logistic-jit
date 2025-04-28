@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
 export async function GET(
-  req: NextRequest,
-  { params }: { params: { vehicleId: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ vehicleId: string }> }
 ) {
-  const { vehicleId } = params;
+  // Resuelves por fin el objeto params
+  const { vehicleId } = await params;
+
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('vehicles')
@@ -20,11 +22,11 @@ export async function GET(
 }
 
 export async function PUT(
-  req: NextRequest,
-  { params }: { params: { vehicleId: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ vehicleId: string }> }
 ) {
-  const { vehicleId } = params;
-  const body = await req.json();
+  const { vehicleId } = await params;
+  const body = await request.json();
 
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -41,10 +43,11 @@ export async function PUT(
 }
 
 export async function DELETE(
-  req: NextRequest,
-  { params }: { params: { vehicleId: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ vehicleId: string }> }
 ) {
-  const { vehicleId } = params;
+  const { vehicleId } = await params;
+
   const supabase = await createClient();
   const { error } = await supabase
     .from('vehicles')

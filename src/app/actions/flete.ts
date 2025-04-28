@@ -4,7 +4,6 @@
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import type { FleteFormValues } from '@/features/fletes/flete-form';
-import { FacturaInput } from '@/features/fletes/invoices-manager';
 
 export async function addFlete(data: FleteFormValues) {
   const supabase = await createClient();
@@ -150,7 +149,7 @@ export async function deleteFlete(id: string) {
   }
 }
 
-export async function addFactura(fleteId: string, factura: FacturaInput) {
+export async function addFactura(fleteId: string, factura: any) {
   const supabase = await createClient();
   try {
     console.log('[addFactura] fleteId:', fleteId, 'factura:', factura);
@@ -171,7 +170,7 @@ export async function addFactura(fleteId: string, factura: FacturaInput) {
   }
 }
 
-export async function updateFactura(id: string, factura: FacturaInput) {
+export async function updateFactura(id: string, factura: any) {
   const supabase = await createClient();
   try {
     console.log('[updateFactura] id:', id, 'payload:', factura);
