@@ -49,6 +49,7 @@ import { createClient } from '@/lib/supabase/client';
 import { addFactura, deleteFactura, updateFactura } from '@/app/actions/flete';
 import { toast } from 'sonner';
 import type { Driver } from '@/types';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 const supabase = createClient();
 
@@ -299,9 +300,9 @@ export default function InvoicesManager({
   };
 
   return (
-    <div className='max-w-[95vw] space-y-4 md:max-w-full'>
+    <ScrollArea className='max-w-[95vw] space-y-4 md:max-w-full'>
       {/* Botón Agregar */}
-      <div className='flex justify-start'>
+      <div className='mb-4 flex justify-start'>
         <Button onClick={handleAdd} disabled={!fleteId}>
           <Plus className='mr-2 h-4 w-4' /> Agregar Factura
         </Button>
@@ -624,6 +625,7 @@ export default function InvoicesManager({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+      <ScrollBar orientation='horizontal' />
+    </ScrollArea>
   );
 }

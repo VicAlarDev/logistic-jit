@@ -16,11 +16,14 @@ export const metadata = {
   title: 'Dashboard: Fletes'
 };
 
-type PageProps = { searchParams: Promise<SearchParams> };
+type pageProps = {
+  searchParams: Promise<SearchParams>;
+};
 
-export default async function Page({ searchParams }: PageProps) {
-  const params = await searchParams;
-  searchParamsCache.parse(params);
+export default async function Page(props: pageProps) {
+  const searchParams = await props.searchParams;
+  // Allow nested RSCs to access the search params (in a type-safe way)
+  searchParamsCache.parse(searchParams);
 
   return (
     <PageContainer scrollable={false}>
@@ -37,7 +40,7 @@ export default async function Page({ searchParams }: PageProps) {
         <Separator />
         <Suspense
           fallback={
-            <DataTableSkeleton columnCount={5} rowCount={8} filterCount={0} />
+            <DataTableSkeleton columnCount={5} rowCount={8} filterCount={4} />
           }
         >
           <FletesListingPage />

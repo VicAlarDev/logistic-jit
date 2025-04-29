@@ -10,19 +10,24 @@ export async function addFlete(data: FleteFormValues) {
   try {
     console.log('[addFlete] input:', data);
 
-    // 1) Crear el flete con status y destination
+    // 1) Insertar flete con todos los campos nuevos
+    const insertPayload = {
+      fo_number: data.fo_number,
+      driver_id: data.driver_id ?? null,
+      cliente_id: data.cliente_id,
+      status: data.status,
+      destination: data.destination,
+      costo_aproximado: data.costo_aproximado ?? null,
+      pago_fecha: data.pago_fecha ?? null,
+      monto_pagado_origen: data.monto_pagado_origen ?? null,
+      moneda_origen: data.moneda_origen,
+      tasa_cambio: data.tasa_cambio ?? null
+    };
+
     const { data: newFlete, error: fleteError } = await supabase
       .from('fletes')
-      .insert([
-        {
-          fo_number: data.fo_number,
-          driver_id: data.driver_id,
-          status: data.status,
-          destination: data.destination
-        }
-      ])
-      // selecciono también status y destination para verificar en el log
-      .select('id, status, destination')
+      .insert([insertPayload])
+      .select('id')
       .single();
 
     if (fleteError || !newFlete) {
@@ -32,7 +37,7 @@ export async function addFlete(data: FleteFormValues) {
     console.log('[addFlete] flete creado:', newFlete);
     const fleteId = newFlete.id;
 
-    // 2) Insertar facturas (si las hay)
+    // 2) Insertar facturas (si aplica)
     if (data.facturas?.length) {
       console.log('[addFlete] insertando facturas:', data.facturas);
       const invoices = data.facturas.map((inv) => ({
@@ -42,14 +47,16 @@ export async function addFlete(data: FleteFormValues) {
         delivery_date: inv.delivery_date || null,
         state_dest: inv.state_dest || null,
         city_dest: inv.city_dest || null,
-        weight_kg: inv.weight_kg ? Number(inv.weight_kg) : null,
+        weight_kg: inv.weight_kg ?? null,
         observation: inv.observation || null,
         flete_id: fleteId,
         driver_id: inv.driver_id || null
       }));
+
       const { error: invoiceError } = await supabase
         .from('facturas')
         .insert(invoices);
+
       if (invoiceError) {
         console.error('[addFlete] error insertando facturas:', invoiceError);
         throw new Error(invoiceError.message);
@@ -70,17 +77,25 @@ export async function updateFlete(id: string, data: FleteFormValues) {
   try {
     console.log('[updateFlete] id:', id, 'payload:', data);
 
-    // 1) Actualizar datos del flete y devolver la fila actualizada
+    // 1) Actualizar flete con todos los campos nuevos
+    const updatePayload = {
+      fo_number: data.fo_number,
+      driver_id: data.driver_id ?? null,
+      cliente_id: data.cliente_id,
+      status: data.status,
+      destination: data.destination,
+      costo_aproximado: data.costo_aproximado ?? null,
+      pago_fecha: data.pago_fecha ?? null,
+      monto_pagado_origen: data.monto_pagado_origen ?? null,
+      moneda_origen: data.moneda_origen,
+      tasa_cambio: data.tasa_cambio ?? null
+    };
+
     const { data: updatedFlete, error: updateError } = await supabase
       .from('fletes')
-      .update({
-        fo_number: data.fo_number,
-        driver_id: data.driver_id,
-        status: data.status,
-        destination: data.destination
-      })
+      .update(updatePayload)
       .eq('id', id)
-      .select('id, status, destination, fo_number, driver_id')
+      .select('id')
       .single();
 
     if (updateError || !updatedFlete) {
@@ -89,7 +104,7 @@ export async function updateFlete(id: string, data: FleteFormValues) {
     }
     console.log('[updateFlete] flete actualizado:', updatedFlete);
 
-    // 2) Reemplazar facturas si vienen en el payload
+    // 2) Reemplazar facturas (si vienen en el payload)
     if (data.facturas) {
       console.log('[updateFlete] eliminando facturas antiguas para flete:', id);
       const { error: delError } = await supabase
@@ -109,14 +124,16 @@ export async function updateFlete(id: string, data: FleteFormValues) {
         delivery_date: inv.delivery_date || null,
         state_dest: inv.state_dest || null,
         city_dest: inv.city_dest || null,
-        weight_kg: inv.weight_kg ? Number(inv.weight_kg) : null,
+        weight_kg: inv.weight_kg ?? null,
         observation: inv.observation || null,
         flete_id: id,
         driver_id: inv.driver_id || null
       }));
+
       const { error: invoiceError } = await supabase
         .from('facturas')
         .insert(invoices);
+
       if (invoiceError) {
         console.error('[updateFlete] error insertando facturas:', invoiceError);
         throw new Error(invoiceError.message);

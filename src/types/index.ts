@@ -77,10 +77,23 @@ export interface Flete {
   updated_at: string;
   status: 'En Transito' | 'Despachado' | 'Relacionado' | 'Pagado' | undefined;
   destination: string;
+  costo_aproximado?: number;
+  monto_pagado_origen?: number;
+  pago_fecha?: string;
+  moneda_origen?: 'USD' | 'VES';
+  tasa_cambio?: number;
+  cliente_id?: string | null;
   drivers?: {
     id: string;
     first_name: string;
     last_name: string;
   };
   facturas?: Factura[];
+}
+
+export interface Cliente {
+  id: string;
+  nombre: string;
+  created_at: string;
+  updated_at: string;
 }

@@ -4,6 +4,7 @@ import type { Column } from '@tanstack/react-table';
 import { CalendarIcon, XCircle } from 'lucide-react';
 import * as React from 'react';
 import type { DateRange } from 'react-day-picker';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -61,50 +62,92 @@ export function DataTableDateFilter<TData>({
   title,
   multiple
 }: DataTableDateFilterProps<TData>) {
-  const columnFilterValue = column.getFilterValue();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const columnId = column.id;
+
+  // Para rangos, usamos parámetros separados
+  const fromParamName = `${columnId}_from`;
+  const toParamName = `${columnId}_to`;
+
+  // Obtener valores actuales de los parámetros
+  const fromParam = searchParams.get(fromParamName);
+  const toParam = searchParams.get(toParamName);
+  const singleParam = searchParams.get(columnId);
 
   const selectedDates = React.useMemo<DateSelection>(() => {
-    if (!columnFilterValue) {
-      return multiple ? { from: undefined, to: undefined } : [];
-    }
-
     if (multiple) {
-      const timestamps = parseColumnFilterValue(columnFilterValue);
       return {
-        from: parseAsDate(timestamps[0]),
-        to: parseAsDate(timestamps[1])
+        from: fromParam ? parseAsDate(fromParam) : undefined,
+        to: toParam ? parseAsDate(toParam) : undefined
       };
+    } else {
+      const date = singleParam ? parseAsDate(singleParam) : undefined;
+      return date ? [date] : [];
     }
+  }, [fromParam, toParam, singleParam, multiple]);
 
-    const timestamps = parseColumnFilterValue(columnFilterValue);
-    const date = parseAsDate(timestamps[0]);
-    return date ? [date] : [];
-  }, [columnFilterValue, multiple]);
+  const updateSearchParams = React.useCallback(
+    (updates: Record<string, string | null>) => {
+      const params = new URLSearchParams(searchParams.toString());
+
+      // Aplicar actualizaciones
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value === null) {
+          params.delete(key);
+        } else {
+          params.set(key, value);
+        }
+      });
+
+      // Actualizar URL
+      const href = `${window.location.pathname}?${params.toString()}`;
+      router.replace(href);
+    },
+    [searchParams, router]
+  );
 
   const onSelect = React.useCallback(
     (date: Date | DateRange | undefined) => {
       if (!date) {
-        column.setFilterValue(undefined);
+        if (multiple) {
+          updateSearchParams({
+            [fromParamName]: null,
+            [toParamName]: null
+          });
+        } else {
+          updateSearchParams({ [columnId]: null });
+        }
         return;
       }
 
       if (multiple && !('getTime' in date)) {
-        const from = date.from?.getTime();
-        const to = date.to?.getTime();
-        column.setFilterValue(from || to ? [from, to] : undefined);
+        // Para rangos, usamos parámetros separados
+        updateSearchParams({
+          [fromParamName]: date.from?.getTime()?.toString() || null,
+          [toParamName]: date.to?.getTime()?.toString() || null
+        });
       } else if (!multiple && 'getTime' in date) {
-        column.setFilterValue(date.getTime());
+        // Para fechas individuales, usamos el parámetro original
+        updateSearchParams({ [columnId]: date.getTime().toString() });
       }
     },
-    [column, multiple]
+    [columnId, fromParamName, toParamName, multiple, updateSearchParams]
   );
 
   const onReset = React.useCallback(
     (event: React.MouseEvent) => {
       event.stopPropagation();
-      column.setFilterValue(undefined);
+      if (multiple) {
+        updateSearchParams({
+          [fromParamName]: null,
+          [toParamName]: null
+        });
+      } else {
+        updateSearchParams({ [columnId]: null });
+      }
     },
-    [column]
+    [columnId, fromParamName, toParamName, multiple, updateSearchParams]
   );
 
   const hasValue = React.useMemo(() => {

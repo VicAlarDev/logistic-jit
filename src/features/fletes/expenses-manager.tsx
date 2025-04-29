@@ -43,6 +43,7 @@ import {
 } from '@/components/ui/select';
 
 import { createClient } from '@/lib/supabase/client';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 const supabase = createClient();
 
@@ -57,7 +58,7 @@ const EXPENSE_CATEGORIES = [
   'Otros'
 ] as const;
 
-const TASA_TIPOS = ['paralelo', 'bcv', 'promedio'] as const;
+const TASA_TIPOS = ['paralelo', 'bcv', 'promedio', 'custom'] as const;
 const MONEDAS = ['USD', 'VES'] as const;
 
 /** Esquema de validación **/
@@ -141,6 +142,55 @@ export default function ExpensesManager({ fleteId }: ExpensesManagerProps) {
   const [expenseToDelete, setExpenseToDelete] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [exchangeRates, setExchangeRates] = useState<{
+    bcv: { price: number; last_update: string };
+    enparalelovzla: { price: number; last_update: string };
+    promedio?: { price: number; last_update: string };
+  } | null>(null);
+  const [isLoadingRates, setIsLoadingRates] = useState(false);
+  const [customRate, setCustomRate] = useState(false);
+
+  // Fetch exchange rates
+  const fetchExchangeRates = async () => {
+    setIsLoadingRates(true);
+    try {
+      const response = await fetch(
+        'https://pydolarve.org/api/v2/dollar?page=alcambio&format_date=default&rounded_price=true'
+      );
+      const data = await response.json();
+
+      if (data.monitors) {
+        const bcvRate = data.monitors.bcv;
+        const parallelRate = data.monitors.enparalelovzla;
+
+        // Calculate average rate
+        const avgRate = {
+          price: Number.parseFloat(
+            ((bcvRate.price + parallelRate.price) / 2).toFixed(2)
+          ),
+          last_update: data.datetime.date + ' ' + data.datetime.time
+        };
+
+        setExchangeRates({
+          bcv: {
+            price: bcvRate.price,
+            last_update: bcvRate.last_update
+          },
+          enparalelovzla: {
+            price: parallelRate.price,
+            last_update: parallelRate.last_update
+          },
+          promedio: avgRate
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching exchange rates:', error);
+      toast.error('Error al obtener tasas de cambio');
+    } finally {
+      setIsLoadingRates(false);
+    }
+  };
+
   const form = useForm<ExpenseFormValues>({
     resolver: zodResolver(expenseSchema),
     defaultValues: {
@@ -165,7 +215,7 @@ export default function ExpensesManager({ fleteId }: ExpensesManagerProps) {
       tasa !== undefined &&
       tasa > 0
     ) {
-      const div = parseFloat((pagoBs / tasa).toFixed(2));
+      const div = Number.parseFloat((pagoBs / tasa).toFixed(2));
       form.setValue('pago_divisa', div, { shouldValidate: true });
     }
   }, [origin, pagoBs, tasa, form]);
@@ -179,7 +229,7 @@ export default function ExpensesManager({ fleteId }: ExpensesManagerProps) {
       tasa !== undefined &&
       tasa > 0
     ) {
-      const bs = parseFloat((pagoDiv * tasa).toFixed(2));
+      const bs = Number.parseFloat((pagoDiv * tasa).toFixed(2));
       form.setValue('pago_bolivares', bs, { shouldValidate: true });
     }
   }, [origin, pagoDiv, tasa, form]);
@@ -188,14 +238,21 @@ export default function ExpensesManager({ fleteId }: ExpensesManagerProps) {
   useEffect(() => {
     const fetchExpenses = async () => {
       setIsLoading(true);
-      let query = supabase
+
+      // Si fleteId es undefined o null, no traemos nada
+      if (!fleteId) {
+        setExpenses([]);
+        setIsLoading(false);
+        return;
+      }
+
+      // Sólo traemos los gastos del flete
+      const { data, error } = await supabase
         .from('gastos')
         .select('*')
+        .eq('flete_id', fleteId)
         .order('expense_date', { ascending: false });
-      if (fleteId) query = query.eq('flete_id', fleteId);
-      else query = query.is('flete_id', null);
 
-      const { data, error } = await query;
       if (error) {
         console.error('Error fetching expenses:', error);
         toast.error('Error al cargar gastos');
@@ -204,8 +261,35 @@ export default function ExpensesManager({ fleteId }: ExpensesManagerProps) {
       }
       setIsLoading(false);
     };
+
     fetchExpenses();
   }, [fleteId]);
+
+  // Fetch exchange rates on mount
+  useEffect(() => {
+    fetchExchangeRates();
+  }, []);
+
+  // Update exchange rate when rate type changes
+  useEffect(() => {
+    const tipoTasa = form.watch('tipo_tasa');
+
+    if (tipoTasa && exchangeRates && !customRate) {
+      let rate;
+
+      if (tipoTasa === 'bcv') {
+        rate = exchangeRates.bcv.price;
+      } else if (tipoTasa === 'paralelo') {
+        rate = exchangeRates.enparalelovzla.price;
+      } else if (tipoTasa === 'promedio') {
+        rate = exchangeRates.promedio?.price;
+      }
+
+      if (rate) {
+        form.setValue('tasa_cambio', rate, { shouldValidate: true });
+      }
+    }
+  }, [form.watch('tipo_tasa'), exchangeRates, customRate, form]);
 
   const handleEdit = (expense: Expense) => {
     setCurrentExpense(expense);
@@ -324,8 +408,8 @@ export default function ExpensesManager({ fleteId }: ExpensesManagerProps) {
   };
 
   return (
-    <div className='max-w-[95vw] space-y-4 md:max-w-full'>
-      <div className='flex justify-start'>
+    <ScrollArea className='max-w-[95vw] space-y-4 md:max-w-full'>
+      <div className='mb-4 flex justify-start'>
         <Button onClick={handleAdd}>
           <Plus className='mr-2 h-4 w-4' /> Agregar Gasto
         </Button>
@@ -548,8 +632,22 @@ export default function ExpensesManager({ fleteId }: ExpensesManagerProps) {
                         step='0.0001'
                         placeholder='Ej. 24.0000'
                         {...field}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          // If user manually changes the value, set customRate to true
+                          const tipoTasa = form.watch('tipo_tasa');
+                          if (tipoTasa && tipoTasa !== 'custom') {
+                            form.setValue('tipo_tasa', 'custom');
+                            setCustomRate(true);
+                          }
+                        }}
                       />
                     </FormControl>
+                    {isLoadingRates && (
+                      <p className='text-muted-foreground mt-1 text-xs'>
+                        Cargando tasas de cambio...
+                      </p>
+                    )}
                   </FormItem>
                 )}
               />
@@ -559,20 +657,37 @@ export default function ExpensesManager({ fleteId }: ExpensesManagerProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Tipo de Tasa</FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
+                    <Select
+                      value={field.value}
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        setCustomRate(false);
+                      }}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder='—' />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {TASA_TIPOS.map((t) => (
-                          <SelectItem key={t} value={t}>
-                            {t.charAt(0).toUpperCase() + t.slice(1)}
-                          </SelectItem>
-                        ))}
+                        <SelectItem value='paralelo'>Paralelo</SelectItem>
+                        <SelectItem value='bcv'>BCV</SelectItem>
+                        <SelectItem value='promedio'>Promedio</SelectItem>
+                        <SelectItem value='custom'>Personalizada</SelectItem>
                       </SelectContent>
                     </Select>
+                    {field.value &&
+                      field.value !== 'custom' &&
+                      exchangeRates && (
+                        <p className='text-muted-foreground mt-1 text-xs'>
+                          Última actualización:{' '}
+                          {field.value === 'paralelo'
+                            ? exchangeRates.enparalelovzla.last_update
+                            : field.value === 'bcv'
+                              ? exchangeRates.bcv.last_update
+                              : exchangeRates.promedio?.last_update}
+                        </p>
+                      )}
                   </FormItem>
                 )}
               />
@@ -629,6 +744,7 @@ export default function ExpensesManager({ fleteId }: ExpensesManagerProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+      <ScrollBar orientation='horizontal' />
+    </ScrollArea>
   );
 }
