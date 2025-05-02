@@ -97,3 +97,58 @@ export interface Cliente {
   created_at: string;
   updated_at: string;
 }
+
+export interface Gasto {
+  id: string;
+  flete_id: string | null;
+  category: string;
+  description: string | null;
+  expense_date: string; // ISO date string
+  created_at: string; // ISO timestamp
+  updated_at: string; // ISO timestamp
+  tasa_cambio: number | null;
+  pago_divisa: number | null;
+  pago_bolivares: number | null;
+  tipo_tasa: string | null; // coincide con public.tasa_tipo_enum
+  original_currency: string; // coincide con public.moneda_origen_enum
+}
+
+export enum MonedaOrigenEnum {
+  USD = 'USD',
+  VES = 'VES'
+}
+
+export enum TasaTipoEnum {
+  BCV = 'bcv',
+  PARALELO = 'paralelo',
+  PROMEDIO = 'promedio',
+  CUSTOM = 'custom'
+}
+
+export interface Debt {
+  id: string;
+  persona_name: string;
+  description: string;
+  original_currency: MonedaOrigenEnum;
+  total_divisa: number;
+  tasa_cambio: number | null;
+  due_date: string | null;
+  created_at: string;
+  updated_at: string;
+  // Campos calculados
+  remainingBalance?: number;
+}
+
+export interface Payment {
+  id: string;
+  deuda_id: string;
+  description: string | null;
+  payment_date: string;
+  original_currency: MonedaOrigenEnum;
+  tasa_cambio: number | null;
+  pago_divisa: number | null;
+  pago_bolivares: number | null;
+  tipo_tasa: TasaTipoEnum | null;
+  created_at: string;
+  updated_at: string;
+}

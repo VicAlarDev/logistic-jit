@@ -25,7 +25,7 @@ export const navItems: NavItem[] = [
     title: 'Fletes',
     url: '/dashboard/fletes',
     icon: 'fletes',
-    shortcut: ['p', 'p'],
+    shortcut: ['f', 'f'],
     isActive: false,
     items: [] // No child items
   },
@@ -33,9 +33,38 @@ export const navItems: NavItem[] = [
     title: 'Vehiculos',
     url: '/dashboard/vehiculos',
     icon: 'vehiculos',
-    shortcut: ['p', 'p'],
+    shortcut: ['v', 'v'],
     isActive: false,
-    items: [] // No child items
+    items: []
+  },
+  {
+    title: 'Gastos',
+    url: '/dashboard/gastos',
+    icon: 'gastos',
+    shortcut: ['g', 'g'],
+    isActive: false,
+    items: [
+      {
+        title: 'Resumen',
+        url: '/dashboard/gastos/resumen',
+        icon: 'gastosResumen',
+        shortcut: ['g', 'r']
+      },
+      {
+        title: 'Tabla',
+        url: '/dashboard/gastos',
+        icon: 'gastosTabla',
+        shortcut: ['g', 't']
+      }
+    ]
+  },
+  {
+    title: 'Deudas',
+    url: '/dashboard/deudas',
+    icon: 'deuda',
+    shortcut: ['shift', 'd'],
+    isActive: false,
+    items: []
   },
   {
     title: 'Account',

@@ -32,7 +32,11 @@ import {
   IconLayoutKanban,
   IconBrandGithub,
   IconTruckDelivery,
-  IconChecklist
+  IconChecklist,
+  IconMoneybagMove,
+  IconCalendarDollar,
+  IconCoinFilled,
+  IconSquareRoundedPercentage
 } from '@tabler/icons-react';
 
 export type Icon = React.ComponentType<IconProps>;
@@ -70,5 +74,9 @@ export const Icons = {
   twitter: IconBrandTwitter,
   check: IconCheck,
   vehiculos: IconTruckDelivery,
-  fletes: IconChecklist
+  fletes: IconChecklist,
+  gastos: IconMoneybagMove,
+  gastosResumen: IconCalendarDollar,
+  gastosTabla: IconCoinFilled,
+  deuda: IconSquareRoundedPercentage
 };
