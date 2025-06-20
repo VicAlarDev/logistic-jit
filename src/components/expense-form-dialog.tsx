@@ -489,9 +489,7 @@ export function ExpenseFormDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value='paralelo'>Paralelo</SelectItem>
                       <SelectItem value='bcv'>BCV</SelectItem>
-                      <SelectItem value='promedio'>Promedio</SelectItem>
                       <SelectItem value='custom'>Personalizada</SelectItem>
                     </SelectContent>
                   </Select>

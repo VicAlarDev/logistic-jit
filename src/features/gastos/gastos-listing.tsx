@@ -45,6 +45,24 @@ export default async function GastosListingPage() {
     }
   }
 
+  const sortParam = searchParamsCache.get('sort') ?? '';
+  let orderField: string = 'expense_date';
+  let ascending = false; // default Desc by date
+  if (typeof sortParam === 'string' && sortParam.length > 0) {
+    try {
+      const parsed = JSON.parse(sortParam);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const first = parsed[0] as { id?: string; desc?: boolean };
+        if (first?.id) {
+          orderField = first.id;
+          ascending = !first.desc;
+        }
+      }
+    } catch {
+      // ignore malformed sort param
+    }
+  }
+
   const supabase = createClient();
   let query = supabase.from('gastos').select('*', { count: 'exact' });
 
@@ -54,14 +72,13 @@ export default async function GastosListingPage() {
   if (startISO) query = query.gte('expense_date', startISO);
   if (endISO) query = query.lte('expense_date', endISO);
 
-  query = query.order('expense_date', { ascending: false });
+  // Apply dynamic ordering from query params
+  query = query.order(orderField, { ascending });
 
   const fromIdx = (page - 1) * perPage;
   const toIdx = page * perPage - 1;
   const { data, count, error } = await query.range(fromIdx, toIdx);
   if (error) throw error;
-
-  console.log(data);
 
   return (
     <GastosTable<Gasto, unknown>

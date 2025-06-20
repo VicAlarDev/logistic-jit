@@ -36,6 +36,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 
 import ExpensesManager from '@/features/fletes/expenses-manager';
 import InvoicesManager from '@/features/fletes/invoices-manager';
@@ -65,7 +66,9 @@ const formSchema = z
     cliente_id: z.string().min(1, 'Requerido'),
     status: z.enum(
       ['En Transito', 'Despachado', 'Relacionado', 'Facturado', 'Pagado'],
-      { required_error: 'Requerido' }
+      {
+        required_error: 'Requerido'
+      }
     ),
     destination: z.string().min(1, 'Requerido'),
     costo_aproximado: z.coerce.number().nonnegative('Debe ser ≥ 0').optional(),
@@ -78,6 +81,29 @@ const formSchema = z
       .optional(),
     moneda_origen: z.enum(['USD', 'VES']),
     tasa_cambio: z.coerce.number().positive('Debe ser > 0').optional(),
+
+    // — campos de pago chofer —
+    monto_pago_chofer: z.coerce.number().nonnegative('Debe ser ≥ 0').optional(),
+    pagado_chofer: z.boolean().optional(),
+    fecha_pago_chofer: z.string().optional(),
+    pago_moneda_chofer: z.enum(['USD', 'VES']).default('USD'),
+    pago_tasa_cambio_chofer: z.coerce
+      .number()
+      .positive('Debe ser > 0')
+      .optional(),
+
+    // — campos de pago ayudante —
+    monto_pago_ayudante: z.coerce
+      .number()
+      .nonnegative('Debe ser ≥ 0')
+      .optional(),
+    pagado_ayudante: z.boolean().optional(),
+    fecha_pago_ayudante: z.string().optional(),
+    pago_moneda_ayudante: z.enum(['USD', 'VES']).default('USD'),
+    pago_tasa_cambio_ayudante: z.coerce
+      .number()
+      .positive('Debe ser > 0')
+      .optional(),
 
     facturas: z.array(facturaSchema).optional()
   })
@@ -99,6 +125,50 @@ const formSchema = z
     {
       message: 'Cuando la moneda es VES, la tasa de cambio es requerida',
       path: ['tasa_cambio']
+    }
+  )
+  .refine(
+    (d) =>
+      !d.pagado_chofer ||
+      !d.fecha_pago_chofer ||
+      d.fecha_pago_chofer.length > 0,
+    {
+      message:
+        'La fecha de pago es requerida cuando el chofer está marcado como pagado',
+      path: ['fecha_pago_chofer']
+    }
+  )
+  .refine(
+    (d) =>
+      !d.pagado_chofer ||
+      d.pago_moneda_chofer === 'USD' ||
+      (d.pago_moneda_chofer === 'VES' && d.pago_tasa_cambio_chofer != null),
+    {
+      message:
+        'Cuando la moneda del chofer es VES, la tasa de cambio es requerida',
+      path: ['pago_tasa_cambio_chofer']
+    }
+  )
+  .refine(
+    (d) =>
+      !d.pagado_ayudante ||
+      !d.fecha_pago_ayudante ||
+      d.fecha_pago_ayudante.length > 0,
+    {
+      message:
+        'La fecha de pago es requerida cuando el ayudante está marcado como pagado',
+      path: ['fecha_pago_ayudante']
+    }
+  )
+  .refine(
+    (d) =>
+      !d.pagado_ayudante ||
+      d.pago_moneda_ayudante === 'USD' ||
+      (d.pago_moneda_ayudante === 'VES' && d.pago_tasa_cambio_ayudante != null),
+    {
+      message:
+        'Cuando la moneda del ayudante es VES, la tasa de cambio es requerida',
+      path: ['pago_tasa_cambio_ayudante']
     }
   );
 
@@ -136,6 +206,22 @@ export default function FleteFormPage({
       moneda_origen: initialData?.moneda_origen || 'USD',
       tasa_cambio: initialData?.tasa_cambio ?? undefined,
 
+      // Nuevos campos chofer
+      monto_pago_chofer: initialData?.monto_pago_chofer ?? undefined,
+      pagado_chofer: initialData?.pagado_chofer ?? false,
+      fecha_pago_chofer: initialData?.fecha_pago_chofer ?? undefined,
+      pago_moneda_chofer: initialData?.pago_moneda_chofer || 'USD',
+      pago_tasa_cambio_chofer:
+        initialData?.pago_tasa_cambio_chofer ?? undefined,
+
+      // Nuevos campos ayudante
+      monto_pago_ayudante: initialData?.monto_pago_ayudante ?? undefined,
+      pagado_ayudante: initialData?.pagado_ayudante ?? false,
+      fecha_pago_ayudante: initialData?.fecha_pago_ayudante ?? undefined,
+      pago_moneda_ayudante: initialData?.pago_moneda_ayudante || 'USD',
+      pago_tasa_cambio_ayudante:
+        initialData?.pago_tasa_cambio_ayudante ?? undefined,
+
       facturas: initialData?.facturas || []
     }
   });
@@ -150,6 +236,10 @@ export default function FleteFormPage({
 
   const statusValue = watch('status');
   const monedaValue = watch('moneda_origen');
+  const pagadoChofer = watch('pagado_chofer');
+  const monedaChofer = watch('pago_moneda_chofer');
+  const pagadoAyudante = watch('pagado_ayudante');
+  const monedaAyudante = watch('pago_moneda_ayudante');
   const clienteIdVal = watch('cliente_id');
   const selectedClie = clientes.find((c) => c.id === clienteIdVal);
   const isCDE = selectedClie?.nombre === 'CDE';
@@ -182,6 +272,17 @@ export default function FleteFormPage({
       setValue('monto_pagado_origen', undefined);
       setValue('moneda_origen', 'USD');
       setValue('tasa_cambio', undefined);
+    }
+
+    if (statusValue === 'En Transito') {
+      setValue('pagado_chofer', false);
+      setValue('fecha_pago_chofer', undefined);
+      setValue('pago_moneda_chofer', 'USD');
+      setValue('pago_tasa_cambio_chofer', undefined);
+      setValue('pagado_ayudante', false);
+      setValue('fecha_pago_ayudante', undefined);
+      setValue('pago_moneda_ayudante', 'USD');
+      setValue('pago_tasa_cambio_ayudante', undefined);
     }
   }, [statusValue, setValue]);
 
@@ -495,6 +596,259 @@ export default function FleteFormPage({
                       )}
                     </>
                   )}
+
+                  {/* — Sección de Pagos Chofer y Ayudante — */}
+                  <div className='space-y-4 border-t pt-4'>
+                    <h3 className='text-lg font-semibold'>Pagos Personal</h3>
+
+                    {/* Chofer */}
+                    <div className='space-y-3 rounded-lg border p-4'>
+                      <h4 className='font-medium'>Chofer</h4>
+
+                      {/* Monto Pago Chofer */}
+                      <FormField
+                        control={control}
+                        name='monto_pago_chofer'
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Monto Pago Chofer (USD)</FormLabel>
+                            <FormControl>
+                              <Input
+                                type='number'
+                                step='0.01'
+                                placeholder='Ej. 50.00'
+                                {...field}
+                              />
+                            </FormControl>
+                            {errors.monto_pago_chofer && (
+                              <p className='mt-1 text-sm text-red-500'>
+                                {errors.monto_pago_chofer.message}
+                              </p>
+                            )}
+                          </FormItem>
+                        )}
+                      />
+
+                      {/* Pagado Chofer */}
+                      <FormField
+                        control={control}
+                        name='pagado_chofer'
+                        render={({ field }) => (
+                          <FormItem className='flex flex-row items-start space-y-0 space-x-3'>
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                                disabled={statusValue === 'En Transito'}
+                              />
+                            </FormControl>
+                            <div className='space-y-1 leading-none'>
+                              <FormLabel>Chofer Pagado</FormLabel>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+
+                      {/* Campos adicionales si chofer está pagado */}
+                      {pagadoChofer && (
+                        <>
+                          {/* Fecha Pago Chofer */}
+                          <FormField
+                            control={control}
+                            name='fecha_pago_chofer'
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Fecha Pago Chofer</FormLabel>
+                                <FormControl>
+                                  <Input type='date' {...field} />
+                                </FormControl>
+                                {errors.fecha_pago_chofer && (
+                                  <p className='mt-1 text-sm text-red-500'>
+                                    {errors.fecha_pago_chofer.message}
+                                  </p>
+                                )}
+                              </FormItem>
+                            )}
+                          />
+
+                          {/* Moneda Chofer */}
+                          <FormField
+                            control={control}
+                            name='pago_moneda_chofer'
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Moneda Pago Chofer</FormLabel>
+                                <FormControl>
+                                  <Select
+                                    value={field.value}
+                                    onValueChange={field.onChange}
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue placeholder='USD / VES' />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value='USD'>USD</SelectItem>
+                                      <SelectItem value='VES'>VES</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+
+                          {/* Tasa Cambio Chofer (solo si VES) */}
+                          {monedaChofer === 'VES' && (
+                            <FormField
+                              control={control}
+                              name='pago_tasa_cambio_chofer'
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Tasa de Cambio Chofer</FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      type='number'
+                                      step='0.0001'
+                                      placeholder='Ej. 30.25'
+                                      {...field}
+                                    />
+                                  </FormControl>
+                                  {errors.pago_tasa_cambio_chofer && (
+                                    <p className='mt-1 text-sm text-red-500'>
+                                      {errors.pago_tasa_cambio_chofer.message}
+                                    </p>
+                                  )}
+                                </FormItem>
+                              )}
+                            />
+                          )}
+                        </>
+                      )}
+                    </div>
+
+                    {/* Ayudante */}
+                    <div className='space-y-3 rounded-lg border p-4'>
+                      <h4 className='font-medium'>Ayudante</h4>
+
+                      {/* Monto Pago Ayudante */}
+                      <FormField
+                        control={control}
+                        name='monto_pago_ayudante'
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Monto Pago Ayudante (USD)</FormLabel>
+                            <FormControl>
+                              <Input
+                                type='number'
+                                step='0.01'
+                                placeholder='Ej. 30.00'
+                                {...field}
+                              />
+                            </FormControl>
+                            {errors.monto_pago_ayudante && (
+                              <p className='mt-1 text-sm text-red-500'>
+                                {errors.monto_pago_ayudante.message}
+                              </p>
+                            )}
+                          </FormItem>
+                        )}
+                      />
+
+                      {/* Pagado Ayudante */}
+                      <FormField
+                        control={control}
+                        name='pagado_ayudante'
+                        render={({ field }) => (
+                          <FormItem className='flex flex-row items-start space-y-0 space-x-3'>
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                                disabled={statusValue === 'En Transito'}
+                              />
+                            </FormControl>
+                            <div className='space-y-1 leading-none'>
+                              <FormLabel>Ayudante Pagado</FormLabel>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+
+                      {/* Campos adicionales si ayudante está pagado */}
+                      {pagadoAyudante && (
+                        <>
+                          {/* Fecha Pago Ayudante */}
+                          <FormField
+                            control={control}
+                            name='fecha_pago_ayudante'
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Fecha Pago Ayudante</FormLabel>
+                                <FormControl>
+                                  <Input type='date' {...field} />
+                                </FormControl>
+                                {errors.fecha_pago_ayudante && (
+                                  <p className='mt-1 text-sm text-red-500'>
+                                    {errors.fecha_pago_ayudante.message}
+                                  </p>
+                                )}
+                              </FormItem>
+                            )}
+                          />
+
+                          {/* Moneda Ayudante */}
+                          <FormField
+                            control={control}
+                            name='pago_moneda_ayudante'
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Moneda Pago Ayudante</FormLabel>
+                                <FormControl>
+                                  <Select
+                                    value={field.value}
+                                    onValueChange={field.onChange}
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue placeholder='USD / VES' />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value='USD'>USD</SelectItem>
+                                      <SelectItem value='VES'>VES</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+
+                          {/* Tasa Cambio Ayudante (solo si VES) */}
+                          {monedaAyudante === 'VES' && (
+                            <FormField
+                              control={control}
+                              name='pago_tasa_cambio_ayudante'
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Tasa de Cambio Ayudante</FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      type='number'
+                                      step='0.0001'
+                                      placeholder='Ej. 30.25'
+                                      {...field}
+                                    />
+                                  </FormControl>
+                                  {errors.pago_tasa_cambio_ayudante && (
+                                    <p className='mt-1 text-sm text-red-500'>
+                                      {errors.pago_tasa_cambio_ayudante.message}
+                                    </p>
+                                  )}
+                                </FormItem>
+                              )}
+                            />
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
                 </CardContent>
 
                 <CardFooter>

@@ -150,10 +150,6 @@ export default function AddPaymentForm({
       let rate: number | undefined;
       if (watchTipoTasa === TasaTipoEnum.BCV) {
         rate = exchangeRates.bcv.price;
-      } else if (watchTipoTasa === TasaTipoEnum.PARALELO) {
-        rate = exchangeRates.enparalelovzla.price;
-      } else if (watchTipoTasa === TasaTipoEnum.PROMEDIO) {
-        rate = exchangeRates.promedio?.price;
       }
       if (rate) {
         form.setValue('tasa_cambio', rate, { shouldValidate: true });
@@ -544,28 +540,15 @@ export default function AddPaymentForm({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value={TasaTipoEnum.PARALELO}>
-                        Paralelo
-                      </SelectItem>
                       <SelectItem value={TasaTipoEnum.BCV}>BCV</SelectItem>
-                      <SelectItem value={TasaTipoEnum.PROMEDIO}>
-                        Promedio
-                      </SelectItem>
                       <SelectItem value={TasaTipoEnum.CUSTOM}>Otro</SelectItem>
                     </SelectContent>
                   </Select>
-                  {field.value &&
-                    field.value !== TasaTipoEnum.CUSTOM &&
-                    exchangeRates && (
-                      <p className='text-muted-foreground mt-1 text-xs'>
-                        Última actualización:{' '}
-                        {field.value === TasaTipoEnum.PARALELO
-                          ? exchangeRates.enparalelovzla.last_update
-                          : field.value === TasaTipoEnum.BCV
-                            ? exchangeRates.bcv.last_update
-                            : exchangeRates.promedio?.last_update}
-                      </p>
-                    )}
+                  {field.value === TasaTipoEnum.BCV && exchangeRates && (
+                    <p className='text-muted-foreground mt-1 text-xs'>
+                      Última actualización: {exchangeRates.bcv.last_update}
+                    </p>
+                  )}
                 </FormItem>
               )}
             />

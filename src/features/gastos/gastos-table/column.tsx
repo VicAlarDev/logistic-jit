@@ -18,7 +18,7 @@ const EXPENSE_CATEGORIES = [
 
 const MONEDAS = ['USD', 'VES'] as const;
 
-const TASA_TIPOS = ['paralelo', 'bcv', 'promedio', 'custom'] as const;
+const TASA_TIPOS = ['bcv', 'custom'] as const;
 
 export const CATEGORY_OPTIONS = EXPENSE_CATEGORIES.map((c) => ({
   label: c,
@@ -113,8 +113,8 @@ export const columns: ColumnDef<Gasto>[] = [
       const value = cell.getValue<number>();
       return value != null
         ? new Intl.NumberFormat('es-VE', {
-            minimumFractionDigits: 4,
-            maximumFractionDigits: 4
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
           }).format(value)
         : '—';
     },

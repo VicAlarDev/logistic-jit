@@ -21,7 +21,21 @@ export async function addFlete(data: FleteFormValues) {
       pago_fecha: data.pago_fecha ?? null,
       monto_pagado_origen: data.monto_pagado_origen ?? null,
       moneda_origen: data.moneda_origen,
-      tasa_cambio: data.tasa_cambio ?? null
+      tasa_cambio: data.tasa_cambio ?? null,
+
+      // Nuevos campos chofer
+      monto_pago_chofer: data.monto_pago_chofer ?? null,
+      pagado_chofer: data.pagado_chofer ?? false,
+      fecha_pago_chofer: data.fecha_pago_chofer ?? null,
+      pago_moneda_chofer: data.pago_moneda_chofer ?? 'USD',
+      pago_tasa_cambio_chofer: data.pago_tasa_cambio_chofer ?? null,
+
+      // Nuevos campos ayudante
+      monto_pago_ayudante: data.monto_pago_ayudante ?? null,
+      pagado_ayudante: data.pagado_ayudante ?? false,
+      fecha_pago_ayudante: data.fecha_pago_ayudante ?? null,
+      pago_moneda_ayudante: data.pago_moneda_ayudante ?? 'USD',
+      pago_tasa_cambio_ayudante: data.pago_tasa_cambio_ayudante ?? null
     };
 
     const { data: newFlete, error: fleteError } = await supabase
@@ -88,7 +102,21 @@ export async function updateFlete(id: string, data: FleteFormValues) {
       pago_fecha: data.pago_fecha ?? null,
       monto_pagado_origen: data.monto_pagado_origen ?? null,
       moneda_origen: data.moneda_origen,
-      tasa_cambio: data.tasa_cambio ?? null
+      tasa_cambio: data.tasa_cambio ?? null,
+
+      // Nuevos campos chofer
+      monto_pago_chofer: data.monto_pago_chofer ?? null,
+      pagado_chofer: data.pagado_chofer ?? false,
+      fecha_pago_chofer: data.fecha_pago_chofer ?? null,
+      pago_moneda_chofer: data.pago_moneda_chofer ?? 'USD',
+      pago_tasa_cambio_chofer: data.pago_tasa_cambio_chofer ?? null,
+
+      // Nuevos campos ayudante
+      monto_pago_ayudante: data.monto_pago_ayudante ?? null,
+      pagado_ayudante: data.pagado_ayudante ?? false,
+      fecha_pago_ayudante: data.fecha_pago_ayudante ?? null,
+      pago_moneda_ayudante: data.pago_moneda_ayudante ?? 'USD',
+      pago_tasa_cambio_ayudante: data.pago_tasa_cambio_ayudante ?? null
     };
 
     const { data: updatedFlete, error: updateError } = await supabase

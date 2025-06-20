@@ -72,17 +72,43 @@ export interface Factura {
 export interface Flete {
   id: string;
   fo_number: string;
+
+  // Relaciones
   driver_id?: string | null;
+  cliente_id?: string | null;
+
+  // Timestamps
   created_at: string;
   updated_at: string;
-  status: 'En Transito' | 'Despachado' | 'Relacionado' | 'Pagado' | undefined;
+
+  // Estado y destinos
+  status: 'En Transito' | 'Despachado' | 'Relacionado' | 'Facturado' | 'Pagado';
   destination: string;
+
+  // Costos originales / pagos al origen
   costo_aproximado?: number;
   monto_pagado_origen?: number;
-  pago_fecha?: string;
-  moneda_origen?: 'USD' | 'VES';
+  moneda_origen: 'USD' | 'VES';
   tasa_cambio?: number;
-  cliente_id?: string | null;
+  pago_fecha?: string;
+  monto_pagado_usd?: number;
+  monto_pagado_ves?: number;
+
+  // → Campos nuevos de pago al chofer
+  monto_pago_chofer?: number; // monto en USD que se debe pagar al chofer
+  pagado_chofer: boolean; // true si ya se le pagó
+  fecha_pago_chofer?: string; // fecha en que se pagó
+  pago_moneda_chofer: 'USD' | 'VES'; // moneda de pago (cuando pagado_chofer = true)
+  pago_tasa_cambio_chofer?: number; // requerida si pago_moneda_chofer = 'VES'
+
+  // → Campos nuevos de pago al ayudante
+  monto_pago_ayudante?: number;
+  pagado_ayudante: boolean;
+  fecha_pago_ayudante?: string;
+  pago_moneda_ayudante: 'USD' | 'VES';
+  pago_tasa_cambio_ayudante?: number;
+
+  // Joins opcionales
   drivers?: {
     id: string;
     first_name: string;
@@ -120,9 +146,7 @@ export enum MonedaOrigenEnum {
 
 export enum TasaTipoEnum {
   BCV = 'bcv',
-  PARALELO = 'paralelo',
-  PROMEDIO = 'promedio',
-  CUSTOM = 'custom'
+  CUSTOM = 'personalizada'
 }
 
 export interface Debt {
